@@ -48,7 +48,7 @@ var (
 
 func init() {
 	flag.StringVar(&origin, "origin", "http://localhost/", "origin of WebSocket client")
-	flag.StringVar(&url, "url", "ws://raspbeegw.lan:8088", "WebSocket server address to connect to")
+	flag.StringVar(&url, "url", "ws://pi:20877", "WebSocket server address to connect to")
 	flag.StringVar(&protocol, "protocol", "", "WebSocket subprotocol")
 	flag.BoolVar(&insecureSkipVerify, "insecureSkipVerify", false, "Skip TLS certificate verification")
 	flag.BoolVar(&displayHelp, "help", false, "Display help information about wsd")
@@ -89,7 +89,7 @@ func printReceivedMessages(in <-chan []byte) {
 	//mqtt.DEBUG = log.New(os.Stdout, "", 0)
 	mqtt.ERROR = log.New(os.Stdout, "bla:", 0)
 	//opts := mqtt.NewClientOptions().AddBroker("tcp://openhab.lan:1883").SetClientID("gotrivial")
-	opts := mqtt.NewClientOptions().AddBroker("tcp://openhab.lan:1883")
+	opts := mqtt.NewClientOptions().AddBroker("tcp://pi:1883")
 	opts.SetKeepAlive(2 * time.Second)
 	//opts.SetDefaultPublishHandler(f)
 	opts.SetPingTimeout(1 * time.Second)
@@ -176,28 +176,26 @@ func printReceivedMessages(in <-chan []byte) {
 		}
 	}
 }
-/*
+
 func forwardMQTTMessage(in <-chan map[string]interface{}) {
 	for msg := range in {
 		for k, v := range msg {
 		    switch vv := v.(type) {
 		    case string:
-			fmt.Println(k, "is string", vv)
+				fmt.Println(k, "is string", vv)
 		    case int:
-			fmt.Println(k, "is int", vv)
+				fmt.Println(k, "is int", vv)
 		    case []interface{}:
-			fmt.Println(k, "is an array:")
+				fmt.Println(k, "is an array:")
 			for i, u := range vv {
 			    fmt.Println(i, u)
 			}
 		    default:
-			fmt.Println(k, "is of a type I don't know how to handle")
+				fmt.Println(k, "is of a type I don't know how to handle")
 		    }
 		}
-
-
 	}
-}*/
+}
 
 func dial(url, protocol, origin string) (ws *websocket.Conn, err error) {
 	config, err := websocket.NewConfig(url, origin)
@@ -248,7 +246,7 @@ func main() {
 	errors := make(chan error)
 	in := make(chan []byte)
 	out := make(chan []byte)
-	//mqtt := make(chan map[string]interface{})
+	mqtt := make(chan map[string]interface{})
 
 	defer close(errors)
 	defer close(out)
@@ -256,7 +254,7 @@ func main() {
 
 	go inLoop(ws, errors, in)
 	go printReceivedMessages(in)
-	//go forwardMQTTMessage(mqtt)
+	go forwardMQTTMessage(mqtt)
 	go printErrors(errors)
 
 	wg.Wait()
